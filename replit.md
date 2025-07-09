@@ -6,7 +6,9 @@ This is a Telegram bot application built with Python that provides reminder func
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- Preferred communication style: Simple, everyday language
+- Bot interface language: Russian (messages should be in Russian for faster user comprehension)
+- Performance preference: Fast response times, concise messages
 
 ## System Architecture
 

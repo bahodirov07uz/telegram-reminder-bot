@@ -28,22 +28,22 @@ reminder_handler = ReminderHandler(bot)
 async def start_command(message: Message):
     """Handle /start command"""
     welcome_text = """
-🤖 **Eslatma Bot**ga xush kelibsiz!
+🤖 **Добро пожаловать в Бот Напоминаний!**
 
-📋 **Bot qanday ishlaydi:**
-• Siz menga vaqt va eslatma matnini yuborasiz
-• Men belgilangan vaqtda sizga avtomatik eslatma yuboraman
+📋 **Как работает бот:**
+• Вы отправляете мне время и текст напоминания
+• Я автоматически отправлю вам напоминание в указанное время
 
-🔧 **Mavjud buyruqlar:**
-• `/remind 22:30 Kitob o'qishni unutmang` - yangi eslatma qo'shish
-• `/list` - barcha aktiv eslatmalarni ko'rish
-• `/cancel` - eslatmani o'chirish (ID bo'yicha)
+🔧 **Доступные команды:**
+• `/remind 22:30 Не забыть прочитать книгу` - добавить напоминание
+• `/list` - показать все активные напоминания
+• `/cancel` - удалить напоминание (по ID)
 
-⏰ **Vaqt formati:** HH:MM (masalan: 14:30, 09:15)
+⏰ **Формат времени:** ЧЧ:ММ (например: 14:30, 09:15)
 
-Eslatma qo'shish uchun `/remind` buyrug'idan foydalaning!
+Используйте `/remind` для добавления напоминания!
     """
-    await message.answer(welcome_text, parse_mode="Markdown")
+    await message.reply(welcome_text, parse_mode="Markdown")
 
 @dp.message(Command("remind"))
 async def remind_command(message: Message):
@@ -53,10 +53,9 @@ async def remind_command(message: Message):
         command_parts = message.text.split(' ', 2)
         
         if len(command_parts) < 3:
-            await message.answer(
-                "❌ **Xato format!**\n\n"
-                "To'g'ri format: `/remind 22:30 Eslatma matni`\n"
-                "Masalan: `/remind 14:30 Dori ichishni unutmang`",
+            await message.reply(
+                "❌ **Неверный формат!**\n"
+                "Используйте: `/remind 22:30 Текст напоминания`",
                 parse_mode="Markdown"
             )
             return
@@ -66,10 +65,9 @@ async def remind_command(message: Message):
         
         # Validate time format
         if not reminder_handler.validate_time_format(time_str):
-            await message.answer(
-                "❌ **Vaqt formati noto'g'ri!**\n\n"
-                "To'g'ri format: HH:MM (24 soat formatida)\n"
-                "Masalan: 09:30, 14:15, 22:00",
+            await message.reply(
+                "❌ **Неверный формат времени!**\n"
+                "Используйте: ЧЧ:ММ (например: 09:30, 14:15, 22:00)",
                 parse_mode="Markdown"
             )
             return
@@ -81,20 +79,19 @@ async def remind_command(message: Message):
             reminder_text=reminder_text
         )
         
-        await message.answer(
-            f"✅ **Eslatma muvaffaqiyatli qo'shildi!**\n\n"
+        await message.reply(
+            f"✅ **Напоминание добавлено!**\n"
             f"🆔 ID: `{reminder_id}`\n"
-            f"⏰ Vaqt: `{time_str}`\n"
-            f"📝 Matn: {reminder_text}\n\n"
-            f"Men sizga har kuni soat {time_str}da eslatma yuboraman.",
+            f"⏰ Время: `{time_str}`\n"
+            f"📝 {reminder_text}",
             parse_mode="Markdown"
         )
         
     except Exception as e:
         logger.error(f"Error in remind_command: {e}")
         await message.answer(
-            "❌ **Xatolik yuz berdi!**\n\n"
-            "Iltimos, qaytadan urinib ko'ring yoki admin bilan bog'laning."
+            "❌ **Произошла ошибка!**\n\n"
+            "Пожалуйста, попробуйте снова или обратитесь к администратору."
         )
 
 @dp.message(Command("list"))
@@ -105,31 +102,31 @@ async def list_command(message: Message):
         
         if not reminders:
             await message.answer(
-                "📭 **Sizda hozircha aktiv eslatmalar yo'q.**\n\n"
-                "Yangi eslatma qo'shish uchun `/remind` buyrug'idan foydalaning."
+                "📭 **У вас пока нет активных напоминаний.**\n\n"
+                "Используйте команду `/remind` для добавления нового напоминания."
             )
             return
         
-        reminder_list = "📋 **Sizning aktiv eslatmalaringiz:**\n\n"
+        reminder_list = "📋 **Ваши активные напоминания:**\n\n"
         
         for reminder in reminders:
             reminder_list += (
                 f"🆔 ID: `{reminder['id']}`\n"
-                f"⏰ Vaqt: `{reminder['time']}`\n"
-                f"📝 Matn: {reminder['text']}\n"
-                f"📅 Qo'shilgan: {reminder['created_at']}\n"
+                f"⏰ Время: `{reminder['time']}`\n"
+                f"📝 Текст: {reminder['text']}\n"
+                f"📅 Добавлено: {reminder['created_at']}\n"
                 f"{'─' * 30}\n"
             )
         
-        reminder_list += f"\n💡 Eslatmani o'chirish uchun: `/cancel ID`"
+        reminder_list += f"\n💡 Для удаления напоминания: `/cancel ID`"
         
-        await message.answer(reminder_list, parse_mode="Markdown")
+        await message.reply(reminder_list, parse_mode="Markdown")
         
     except Exception as e:
         logger.error(f"Error in list_command: {e}")
         await message.answer(
-            "❌ **Xatolik yuz berdi!**\n\n"
-            "Eslatmalar ro'yxatini olishda muammo."
+            "❌ **Произошла ошибка!**\n\n"
+            "Проблема при получении списка напоминаний."
         )
 
 @dp.message(Command("cancel"))
@@ -140,10 +137,10 @@ async def cancel_command(message: Message):
         
         if len(command_parts) != 2:
             await message.answer(
-                "❌ **Xato format!**\n\n"
-                "To'g'ri format: `/cancel ID`\n"
-                "Masalan: `/cancel 123`\n\n"
-                "Eslatma ID sini bilish uchun `/list` buyrug'idan foydalaning."
+                "❌ **Неверный формат!**\n\n"
+                "Правильный формат: `/cancel ID`\n"
+                "Например: `/cancel 123`\n\n"
+                "Используйте `/list` для просмотра ID напоминаний."
             )
             return
         
@@ -151,8 +148,8 @@ async def cancel_command(message: Message):
             reminder_id = int(command_parts[1])
         except ValueError:
             await message.answer(
-                "❌ **ID raqam bo'lishi kerak!**\n\n"
-                "Masalan: `/cancel 123`"
+                "❌ **ID должен быть числом!**\n\n"
+                "Например: `/cancel 123`"
             )
             return
         
@@ -162,36 +159,35 @@ async def cancel_command(message: Message):
         )
         
         if success:
-            await message.answer(
-                f"✅ **Eslatma muvaffaqiyatli o'chirildi!**\n\n"
+            await message.reply(
+                f"✅ **Напоминание удалено!**\n"
                 f"🆔 ID: `{reminder_id}`",
                 parse_mode="Markdown"
             )
         else:
-            await message.answer(
-                f"❌ **Eslatma topilmadi!**\n\n"
-                f"ID `{reminder_id}` bo'yicha eslatma mavjud emas yoki u sizga tegishli emas.\n\n"
-                f"Mavjud eslatmalarni ko'rish uchun `/list` buyrug'idan foydalaning.",
+            await message.reply(
+                f"❌ **Напоминание не найдено!**\n"
+                f"ID `{reminder_id}` не существует. Используйте `/list`",
                 parse_mode="Markdown"
             )
             
     except Exception as e:
         logger.error(f"Error in cancel_command: {e}")
         await message.answer(
-            "❌ **Xatolik yuz berdi!**\n\n"
-            "Eslatmani o'chirishda muammo."
+            "❌ **Произошла ошибка!**\n\n"
+            "Проблема при удалении напоминания."
         )
 
 @dp.message()
 async def handle_other_messages(message: Message):
     """Handle all other messages"""
-    await message.answer(
-        "🤔 **Tushunmadim...**\n\n"
-        "Mavjud buyruqlar:\n"
-        "• `/start` - bot haqida ma'lumot\n"
-        "• `/remind 22:30 matn` - eslatma qo'shish\n"
-        "• `/list` - eslatmalar ro'yxati\n"
-        "• `/cancel ID` - eslatmani o'chirish"
+    await message.reply(
+        "🤔 **Не понимаю...**\n\n"
+        "Доступные команды:\n"
+        "• `/start` - информация о боте\n"
+        "• `/remind 22:30 текст` - добавить напоминание\n"
+        "• `/list` - список напоминаний\n"
+        "• `/cancel ID` - удалить напоминание"
     )
 
 async def main():

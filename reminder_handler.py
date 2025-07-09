@@ -116,7 +116,7 @@ class ReminderHandler:
     async def send_reminder(self, reminder: Dict):
         """Send a reminder to the user"""
         try:
-            message = f"🔔 **Eslatma:** {reminder['text']}"
+            message = f"🔔 **Напоминание:** {reminder['text']}"
             await self.bot.send_message(
                 chat_id=reminder["user_id"],
                 text=message,
