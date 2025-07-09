@@ -4,7 +4,6 @@ import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import Message
-from aiogram import F
 from reminder_handler import ReminderHandler
 
 # Configure logging
@@ -28,20 +27,20 @@ reminder_handler = ReminderHandler(bot)
 async def start_command(message: Message):
     """Handle /start command"""
     welcome_text = """
-🤖 **Добро пожаловать в Бот Напоминаний!**
+🤖 **Welcome to the Reminder Bot!**
 
-📋 **Как работает бот:**
-• Вы отправляете мне время и текст напоминания
-• Я автоматически отправлю вам напоминание в указанное время
+📋 **How this bot works:**
+• Send me a time and reminder text
+• I will automatically send you the reminder at the specified time
 
-🔧 **Доступные команды:**
-• `/remind 22:30 Не забыть прочитать книгу` - добавить напоминание
-• `/list` - показать все активные напоминания
-• `/cancel` - удалить напоминание (по ID)
+🔧 **Available commands:**
+• `/remind 22:30 Don't forget to read a book` - add a reminder
+• `/list` - show all active reminders
+• `/cancel` - delete a reminder by ID
 
-⏰ **Формат времени:** ЧЧ:ММ (например: 14:30, 09:15)
+⏰ **Time format:** HH:MM (e.g., 14:30, 09:15)
 
-Используйте `/remind` для добавления напоминания!
+Use `/remind` to add a new reminder!
     """
     await message.reply(welcome_text, parse_mode="Markdown")
 
@@ -54,8 +53,8 @@ async def remind_command(message: Message):
         
         if len(command_parts) < 3:
             await message.reply(
-                "❌ **Неверный формат!**\n"
-                "Используйте: `/remind 22:30 Текст напоминания`",
+                "❌ **Invalid format!**\n"
+                "Use: `/remind 22:30 Reminder text here`",
                 parse_mode="Markdown"
             )
             return
@@ -66,8 +65,8 @@ async def remind_command(message: Message):
         # Validate time format
         if not reminder_handler.validate_time_format(time_str):
             await message.reply(
-                "❌ **Неверный формат времени!**\n"
-                "Используйте: ЧЧ:ММ (например: 09:30, 14:15, 22:00)",
+                "❌ **Invalid time format!**\n"
+                "Use: HH:MM (e.g., 09:30, 14:15, 22:00)",
                 parse_mode="Markdown"
             )
             return
@@ -80,9 +79,9 @@ async def remind_command(message: Message):
         )
         
         await message.reply(
-            f"✅ **Напоминание добавлено!**\n"
+            f"✅ **Reminder added!**\n"
             f"🆔 ID: `{reminder_id}`\n"
-            f"⏰ Время: `{time_str}`\n"
+            f"⏰ Time: `{time_str}`\n"
             f"📝 {reminder_text}",
             parse_mode="Markdown"
         )
@@ -90,8 +89,8 @@ async def remind_command(message: Message):
     except Exception as e:
         logger.error(f"Error in remind_command: {e}")
         await message.answer(
-            "❌ **Произошла ошибка!**\n\n"
-            "Пожалуйста, попробуйте снова или обратитесь к администратору."
+            "❌ **An error occurred!**\n\n"
+            "Please try again or contact the administrator."
         )
 
 @dp.message(Command("list"))
@@ -102,31 +101,31 @@ async def list_command(message: Message):
         
         if not reminders:
             await message.answer(
-                "📭 **У вас пока нет активных напоминаний.**\n\n"
-                "Используйте команду `/remind` для добавления нового напоминания."
+                "📭 **You have no active reminders.**\n\n"
+                "Use `/remind` to add a new reminder."
             )
             return
         
-        reminder_list = "📋 **Ваши активные напоминания:**\n\n"
+        reminder_list = "📋 **Your active reminders:**\n\n"
         
         for reminder in reminders:
             reminder_list += (
                 f"🆔 ID: `{reminder['id']}`\n"
-                f"⏰ Время: `{reminder['time']}`\n"
-                f"📝 Текст: {reminder['text']}\n"
-                f"📅 Добавлено: {reminder['created_at']}\n"
+                f"⏰ Time: `{reminder['time']}`\n"
+                f"📝 Text: {reminder['text']}\n"
+                f"📅 Added: {reminder['created_at']}\n"
                 f"{'─' * 30}\n"
             )
         
-        reminder_list += f"\n💡 Для удаления напоминания: `/cancel ID`"
+        reminder_list += f"\n💡 To delete a reminder: `/cancel ID`"
         
         await message.reply(reminder_list, parse_mode="Markdown")
         
     except Exception as e:
         logger.error(f"Error in list_command: {e}")
         await message.answer(
-            "❌ **Произошла ошибка!**\n\n"
-            "Проблема при получении списка напоминаний."
+            "❌ **An error occurred!**\n\n"
+            "There was a problem retrieving your reminders."
         )
 
 @dp.message(Command("cancel"))
@@ -137,10 +136,10 @@ async def cancel_command(message: Message):
         
         if len(command_parts) != 2:
             await message.answer(
-                "❌ **Неверный формат!**\n\n"
-                "Правильный формат: `/cancel ID`\n"
-                "Например: `/cancel 123`\n\n"
-                "Используйте `/list` для просмотра ID напоминаний."
+                "❌ **Invalid format!**\n\n"
+                "Correct format: `/cancel ID`\n"
+                "Example: `/cancel 123`\n\n"
+                "Use `/list` to see reminder IDs."
             )
             return
         
@@ -148,8 +147,8 @@ async def cancel_command(message: Message):
             reminder_id = int(command_parts[1])
         except ValueError:
             await message.answer(
-                "❌ **ID должен быть числом!**\n\n"
-                "Например: `/cancel 123`"
+                "❌ **ID must be a number!**\n\n"
+                "Example: `/cancel 123`"
             )
             return
         
@@ -160,40 +159,40 @@ async def cancel_command(message: Message):
         
         if success:
             await message.reply(
-                f"✅ **Напоминание удалено!**\n"
+                f"✅ **Reminder deleted!**\n"
                 f"🆔 ID: `{reminder_id}`",
                 parse_mode="Markdown"
             )
         else:
             await message.reply(
-                f"❌ **Напоминание не найдено!**\n"
-                f"ID `{reminder_id}` не существует. Используйте `/list`",
+                f"❌ **Reminder not found!**\n"
+                f"ID `{reminder_id}` does not exist. Use `/list`",
                 parse_mode="Markdown"
             )
             
     except Exception as e:
         logger.error(f"Error in cancel_command: {e}")
         await message.answer(
-            "❌ **Произошла ошибка!**\n\n"
-            "Проблема при удалении напоминания."
+            "❌ **An error occurred!**\n\n"
+            "There was a problem deleting the reminder."
         )
 
 @dp.message()
 async def handle_other_messages(message: Message):
     """Handle all other messages"""
     await message.reply(
-        "🤔 **Не понимаю...**\n\n"
-        "Доступные команды:\n"
-        "• `/start` - информация о боте\n"
-        "• `/remind 22:30 текст` - добавить напоминание\n"
-        "• `/list` - список напоминаний\n"
-        "• `/cancel ID` - удалить напоминание"
+        "🤔 **I don't understand...**\n\n"
+        "Available commands:\n"
+        "• `/start` - bot information\n"
+        "• `/remind 22:30 text` - add a reminder\n"
+        "• `/list` - list your reminders\n"
+        "• `/cancel ID` - delete a reminder"
     )
 
 async def main():
     """Main function to run the bot"""
     try:
-        logger.info("Bot ishga tushmoqda...")
+        logger.info("Bot is starting...")
         
         # Start the reminder checker task
         asyncio.create_task(reminder_handler.start_reminder_checker())
@@ -202,7 +201,7 @@ async def main():
         await dp.start_polling(bot)
         
     except Exception as e:
-        logger.error(f"Bot ishga tushishda xatolik: {e}")
+        logger.error(f"Error while starting bot: {e}")
     finally:
         await bot.session.close()
 
