@@ -17,7 +17,7 @@
 
 ## 🌐 User Preferences
 
-- 🗣️ Language: Russian
+- 🗣️ Language: English
 - 💬 Style: Simple, everyday language
 - ⚡ Performance: Fast responses, short confirmations
 
