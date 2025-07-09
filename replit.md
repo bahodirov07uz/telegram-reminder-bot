@@ -16,7 +16,8 @@ The application follows a modular architecture with separation of concerns:
 
 - **main.py**: Entry point and bot initialization with command handlers
 - **reminder_handler.py**: Core business logic for reminder management
-- **storage.json**: Persistent data storage using JSON format
+- **db_handler.py**: Database operations and SQLite management
+- **reminders.db**: SQLite database for persistent data storage
 
 The architecture is event-driven, responding to Telegram commands and managing scheduled reminders through asynchronous operations.
 
@@ -39,16 +40,17 @@ The architecture is event-driven, responding to Telegram commands and managing s
 - **/cancel**: Remove specific reminders by ID
 
 ### Data Storage
-- **Format**: JSON file-based storage (storage.json)
-- **Structure**: Simple array of reminder objects with ID, time, and message
-- **Persistence**: File-based storage ensures reminders survive bot restarts
+- **Format**: SQLite database (reminders.db)
+- **Structure**: Relational database with proper indexing for performance
+- **Migration**: Automatic migration from JSON to SQLite with backup
+- **Persistence**: Database storage ensures reminders survive bot restarts
 
 ## Data Flow
 
 1. **User Input**: Users send commands through Telegram
 2. **Command Processing**: aiogram dispatcher routes commands to appropriate handlers
 3. **Business Logic**: ReminderHandler processes reminder operations
-4. **Data Persistence**: Reminders saved to/loaded from JSON storage
+4. **Data Persistence**: Reminders saved to/loaded from SQLite database
 5. **Scheduled Delivery**: Bot delivers reminders at specified times
 6. **Response**: User receives confirmation or reminder messages
 
@@ -66,23 +68,26 @@ The architecture is event-driven, responding to Telegram commands and managing s
 
 ### Third-party Services
 - **Telegram API**: Primary interface for bot communication
-- **No database dependency**: Uses local JSON file storage
+- **SQLite database**: Embedded database for reliable storage
 
 ## Deployment Strategy
 
 ### Current Setup
-- **Storage**: Local file system (storage.json)
+- **Storage**: SQLite database (reminders.db)
 - **Configuration**: Environment variable for bot token
 - **Logging**: Console-based logging with configurable levels
+- **Migration**: Automatic JSON-to-SQLite migration with backup
 
 ### Considerations
-- **Scalability**: Current JSON storage suitable for single-user or small-scale usage
-- **State Management**: In-memory reminder tracking with file persistence
-- **Error Handling**: Basic exception handling for file operations and API calls
+- **Scalability**: SQLite storage suitable for moderate usage with proper indexing
+- **State Management**: Database-backed reminder tracking with transaction support
+- **Error Handling**: Comprehensive exception handling for database operations and API calls
+- **Performance**: Indexed queries for efficient reminder retrieval
 
-### Potential Enhancements
-- Could migrate to database storage (PostgreSQL) for multi-user scenarios
-- Could add user authentication and multi-tenant support
-- Could implement more sophisticated scheduling mechanisms
+### Recent Enhancements
+- **Database Migration**: Successfully migrated from JSON to SQLite (July 2025)
+- **Performance Optimization**: Added database indexing for faster queries
+- **Data Integrity**: Improved reminder tracking with proper timestamps
+- **Backup System**: Automatic backup of old JSON data during migration
 
-The architecture prioritizes simplicity and ease of deployment while maintaining essential functionality for reminder management.
+The architecture prioritizes scalability and performance while maintaining simplicity for deployment and essential functionality for reminder management.

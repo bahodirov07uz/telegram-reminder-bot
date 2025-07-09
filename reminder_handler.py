@@ -1,10 +1,9 @@
 import asyncio
-import json
-import os
 import logging
 from datetime import datetime, time
 from typing import List, Dict, Optional
 from aiogram import Bot
+from db_handler import DatabaseHandler
 
 logger = logging.getLogger(__name__)
 
@@ -13,35 +12,8 @@ class ReminderHandler:
     
     def __init__(self, bot: Bot):
         self.bot = bot
-        self.storage_file = "storage.json"
-        self.reminders = self.load_reminders()
-        self.next_id = self.get_next_id()
-        
-    def load_reminders(self) -> Dict:
-        """Load reminders from JSON file"""
-        try:
-            if os.path.exists(self.storage_file):
-                with open(self.storage_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            else:
-                return {"reminders": []}
-        except Exception as e:
-            logger.error(f"Error loading reminders: {e}")
-            return {"reminders": []}
-    
-    def save_reminders(self):
-        """Save reminders to JSON file"""
-        try:
-            with open(self.storage_file, 'w', encoding='utf-8') as f:
-                json.dump(self.reminders, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            logger.error(f"Error saving reminders: {e}")
-    
-    def get_next_id(self) -> int:
-        """Get the next available ID for reminders"""
-        if not self.reminders["reminders"]:
-            return 1
-        return max(reminder["id"] for reminder in self.reminders["reminders"]) + 1
+        self.db = DatabaseHandler()
+
     
     def validate_time_format(self, time_str: str) -> bool:
         """Validate time format HH:MM"""
@@ -65,57 +37,19 @@ class ReminderHandler:
     
     async def add_reminder(self, user_id: int, time_str: str, reminder_text: str) -> int:
         """Add a new reminder"""
-        reminder = {
-            "id": self.next_id,
-            "user_id": user_id,
-            "time": time_str,
-            "text": reminder_text,
-            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "active": True
-        }
-        
-        self.reminders["reminders"].append(reminder)
-        self.next_id += 1
-        self.save_reminders()
-        
-        logger.info(f"Added reminder {reminder['id']} for user {user_id}")
-        return reminder["id"]
+        return self.db.add_reminder(user_id, time_str, reminder_text)
     
     async def get_user_reminders(self, user_id: int) -> List[Dict]:
         """Get all active reminders for a user"""
-        return [
-            reminder for reminder in self.reminders["reminders"]
-            if reminder["user_id"] == user_id and reminder["active"]
-        ]
+        return self.db.get_user_reminders(user_id)
     
     async def cancel_reminder(self, user_id: int, reminder_id: int) -> bool:
         """Cancel a reminder by ID"""
-        for reminder in self.reminders["reminders"]:
-            if (reminder["id"] == reminder_id and 
-                reminder["user_id"] == user_id and 
-                reminder["active"]):
-                
-                reminder["active"] = False
-                self.save_reminders()
-                logger.info(f"Cancelled reminder {reminder_id} for user {user_id}")
-                return True
-        
-        return False
+        return self.db.cancel_reminder(user_id, reminder_id)
     
     async def get_due_reminders(self) -> List[Dict]:
         """Get reminders that are due at the current time"""
-        current_time = datetime.now().strftime("%H:%M")
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        
-        due_reminders = []
-        for reminder in self.reminders["reminders"]:
-            if reminder["active"] and reminder["time"] == current_time:
-                # Check if reminder was already sent today
-                last_sent = reminder.get("last_sent", "")
-                if last_sent != current_date:
-                    due_reminders.append(reminder)
-        
-        return due_reminders
+        return self.db.get_due_reminders()
     
     async def send_reminder(self, reminder: Dict):
         """Send a reminder to the user"""
@@ -128,12 +62,8 @@ class ReminderHandler:
             )
             logger.info(f"Sent reminder {reminder['id']} to user {reminder['user_id']}")
             
-            # Update the reminder with last sent date to avoid duplicate sends
-            for rem in self.reminders["reminders"]:
-                if rem["id"] == reminder["id"]:
-                    rem["last_sent"] = datetime.now().strftime("%Y-%m-%d")
-                    break
-            self.save_reminders()
+            # Mark reminder as sent in database
+            self.db.mark_reminder_sent(reminder["id"])
             
         except Exception as e:
             logger.error(f"Error sending reminder {reminder['id']} to user {reminder['user_id']}: {e}")
@@ -153,7 +83,7 @@ class ReminderHandler:
                     await self.send_reminder(reminder)
             else:
                 # Log active reminders for debugging
-                active_reminders = [r for r in self.reminders["reminders"] if r["active"]]
+                active_reminders = self.db.get_all_active_reminders()
                 logger.info(f"No due reminders. Active reminders: {len(active_reminders)}")
                 if active_reminders:
                     for r in active_reminders:
@@ -181,11 +111,4 @@ class ReminderHandler:
     
     def get_stats(self) -> Dict:
         """Get statistics about reminders"""
-        active_reminders = [r for r in self.reminders["reminders"] if r["active"]]
-        total_users = len(set(r["user_id"] for r in active_reminders))
-        
-        return {
-            "total_reminders": len(self.reminders["reminders"]),
-            "active_reminders": len(active_reminders),
-            "total_users": total_users
-        }
+        return self.db.get_stats()
