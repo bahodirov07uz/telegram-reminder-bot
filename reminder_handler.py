@@ -105,11 +105,15 @@ class ReminderHandler:
     async def get_due_reminders(self) -> List[Dict]:
         """Get reminders that are due at the current time"""
         current_time = datetime.now().strftime("%H:%M")
+        current_date = datetime.now().strftime("%Y-%m-%d")
         
         due_reminders = []
         for reminder in self.reminders["reminders"]:
             if reminder["active"] and reminder["time"] == current_time:
-                due_reminders.append(reminder)
+                # Check if reminder was already sent today
+                last_sent = reminder.get("last_sent", "")
+                if last_sent != current_date:
+                    due_reminders.append(reminder)
         
         return due_reminders
     
@@ -124,19 +128,36 @@ class ReminderHandler:
             )
             logger.info(f"Sent reminder {reminder['id']} to user {reminder['user_id']}")
             
+            # Update the reminder with last sent date to avoid duplicate sends
+            for rem in self.reminders["reminders"]:
+                if rem["id"] == reminder["id"]:
+                    rem["last_sent"] = datetime.now().strftime("%Y-%m-%d")
+                    break
+            self.save_reminders()
+            
         except Exception as e:
             logger.error(f"Error sending reminder {reminder['id']} to user {reminder['user_id']}: {e}")
     
     async def check_and_send_reminders(self):
         """Check for due reminders and send them"""
         try:
+            current_time = datetime.now().strftime("%H:%M")
             due_reminders = await self.get_due_reminders()
+            
+            logger.info(f"Checking reminders at {current_time}")
             
             if due_reminders:
                 logger.info(f"Found {len(due_reminders)} due reminders")
                 
                 for reminder in due_reminders:
                     await self.send_reminder(reminder)
+            else:
+                # Log active reminders for debugging
+                active_reminders = [r for r in self.reminders["reminders"] if r["active"]]
+                logger.info(f"No due reminders. Active reminders: {len(active_reminders)}")
+                if active_reminders:
+                    for r in active_reminders:
+                        logger.info(f"Active reminder: ID={r['id']}, time={r['time']}, current={current_time}")
                     
         except Exception as e:
             logger.error(f"Error checking reminders: {e}")
